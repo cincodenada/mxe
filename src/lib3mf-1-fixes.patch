@@ -1,0 +1,41 @@
+diff -ur lib3mf.orig/Project/Lib3MFGCC/main.cpp lib3mf/Project/Lib3MFGCC/main.cpp
+--- lib3mf.orig/Project/Lib3MFGCC/main.cpp	2016-02-18 18:35:43.000000000 +0100
++++ lib3mf/Project/Lib3MFGCC/main.cpp	2016-10-10 01:04:05.399820518 +0200
+@@ -33,7 +33,7 @@
+ 
+ #ifdef _WIN32
+ 
+-#include <Windows.h>
++#include <windows.h>
+ 
+ extern "C" __declspec(dllexport) BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+ {
+diff -ur lib3mf.orig/Project/Lib3MFGCC/Makefile.Linux lib3mf/Project/Lib3MFGCC/Makefile.Linux
+--- lib3mf.orig/Project/Lib3MFGCC/Makefile.Linux	2016-02-18 18:35:43.000000000 +0100
++++ lib3mf/Project/Lib3MFGCC/Makefile.Linux	2016-10-10 01:03:20.029534554 +0200
+@@ -58,6 +58,12 @@
+ 
+ debug: before_debug out_debug after_debug
+ 
++debug_static : before_debug out_debug_static after_debug
++
++.PHONY: out_debug_static
++out_debug_static: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
++	$(AR) cr $(OUT_DEBUG) $(OBJ_DEBUG)
++
+ out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
+ 	$(LD) -shared $(LIBDIR_DEBUG) $(OBJ_DEBUG)  -o $(OUT_DEBUG) $(LDFLAGS_DEBUG) $(LIB_DEBUG)
+ 
+@@ -782,6 +788,12 @@
+ 
+ release: before_release out_release after_release
+ 
++release_static : before_release out_release_static after_release
++
++.PHONY: out_release_static
++out_release_static: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
++	$(AR) cr $(OUT_RELEASE) $(OBJ_RELEASE)
++
+ out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
+ 	$(LD) -shared $(LIBDIR_RELEASE) $(OBJ_RELEASE)  -o $(OUT_RELEASE) $(LDFLAGS_RELEASE) $(LIB_RELEASE)
+ 
