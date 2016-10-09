@@ -1,0 +1,87 @@
+diff -ur lib3mf.orig/Source/Model/Reader/v093/NMR_ModelReaderNode093_TextureVertex.cpp lib3mf/Source/Model/Reader/v093/NMR_ModelReaderNode093_TextureVertex.cpp
+--- lib3mf.orig/Source/Model/Reader/v093/NMR_ModelReaderNode093_TextureVertex.cpp	2016-02-18 18:35:43.000000000 +0100
++++ lib3mf/Source/Model/Reader/v093/NMR_ModelReaderNode093_TextureVertex.cpp	2016-10-09 02:41:30.687591130 +0200
+@@ -84,8 +84,9 @@
+ 		__NMRASSERT(pAttributeName);
+ 		__NMRASSERT(pAttributeValue);
+ 
++		wchar_t *e;
+ 		if (wcscmp(pAttributeName, XML_3MF_ATTRIBUTE_TEXTURE_U) == 0) {
+-			m_fU = wcstof(pAttributeValue, nullptr);
++			m_fU = wcstof(pAttributeValue, &e);
+ 			if (isnan (m_fU))
+ 				throw CNMRException(NMR_ERROR_INVALIDMODELTEXTURECOORDINATES);
+ 			if (fabs (m_fU) > XML_3MF_MAXIMUMCOORDINATEVALUE)
+@@ -94,7 +95,7 @@
+ 		}
+ 
+ 		if (wcscmp(pAttributeName, XML_3MF_ATTRIBUTE_TEXTURE_V) == 0) {
+-			m_fV = wcstof(pAttributeValue, nullptr);
++			m_fV = wcstof(pAttributeValue, &e);
+ 			if (isnan (m_fV))
+ 				throw CNMRException(NMR_ERROR_INVALIDMODELTEXTURECOORDINATES);
+ 			if (fabs(m_fV) > XML_3MF_MAXIMUMCOORDINATEVALUE)
+diff -ur lib3mf.orig/Source/Model/Reader/v093/NMR_ModelReaderNode093_Vertex.cpp lib3mf/Source/Model/Reader/v093/NMR_ModelReaderNode093_Vertex.cpp
+--- lib3mf.orig/Source/Model/Reader/v093/NMR_ModelReaderNode093_Vertex.cpp	2016-02-18 18:35:43.000000000 +0100
++++ lib3mf/Source/Model/Reader/v093/NMR_ModelReaderNode093_Vertex.cpp	2016-10-09 02:42:03.058385054 +0200
+@@ -80,8 +80,9 @@
+ 		__NMRASSERT(pAttributeName);
+ 		__NMRASSERT(pAttributeValue);
+ 
++		wchar_t *e;
+ 		if (wcscmp(pAttributeName, XML_3MF_ATTRIBUTE_VERTEX_X) == 0) {
+-			m_fX = wcstof(pAttributeValue, nullptr);
++			m_fX = wcstof(pAttributeValue, &e);
+ 			if (isnan (m_fX))
+ 				throw CNMRException(NMR_ERROR_INVALIDMODELCOORDINATES);
+ 			if (fabs (m_fX) > XML_3MF_MAXIMUMCOORDINATEVALUE)
+@@ -90,7 +91,7 @@
+ 		}
+ 
+ 		if (wcscmp(pAttributeName, XML_3MF_ATTRIBUTE_VERTEX_Y) == 0) {
+-			m_fY = wcstof(pAttributeValue, nullptr);
++			m_fY = wcstof(pAttributeValue, &e);
+ 			if (isnan (m_fY))
+ 				throw CNMRException(NMR_ERROR_INVALIDMODELCOORDINATES);
+ 			if (fabs(m_fY) > XML_3MF_MAXIMUMCOORDINATEVALUE)
+@@ -99,7 +100,7 @@
+ 		}
+ 
+ 		if (wcscmp(pAttributeName, XML_3MF_ATTRIBUTE_VERTEX_Z) == 0) {
+-			m_fZ = wcstof(pAttributeValue, nullptr);
++			m_fZ = wcstof(pAttributeValue, &e);
+ 			if (isnan (m_fZ))
+ 				throw CNMRException(NMR_ERROR_INVALIDMODELCOORDINATES);
+ 			if (fabs(m_fZ) > XML_3MF_MAXIMUMCOORDINATEVALUE)
+diff -ur lib3mf.orig/Source/Model/Reader/v100/NMR_ModelReaderNode100_Vertex.cpp lib3mf/Source/Model/Reader/v100/NMR_ModelReaderNode100_Vertex.cpp
+--- lib3mf.orig/Source/Model/Reader/v100/NMR_ModelReaderNode100_Vertex.cpp	2016-02-18 18:35:43.000000000 +0100
++++ lib3mf/Source/Model/Reader/v100/NMR_ModelReaderNode100_Vertex.cpp	2016-10-08 22:21:19.104393691 +0200
+@@ -80,8 +80,9 @@
+ 		__NMRASSERT(pAttributeName);
+ 		__NMRASSERT(pAttributeValue);
+ 
++		wchar_t *e;
+ 		if (wcscmp(pAttributeName, XML_3MF_ATTRIBUTE_VERTEX_X) == 0) {
+-			m_fX = wcstof(pAttributeValue, nullptr);
++			m_fX = wcstof(pAttributeValue, &e);
+ 			if (isnan (m_fX))
+ 				throw CNMRException(NMR_ERROR_INVALIDMODELCOORDINATES);
+ 			if (fabs (m_fX) > XML_3MF_MAXIMUMCOORDINATEVALUE)
+@@ -90,7 +91,7 @@
+ 		}
+ 
+ 		if (wcscmp(pAttributeName, XML_3MF_ATTRIBUTE_VERTEX_Y) == 0) {
+-			m_fY = wcstof(pAttributeValue, nullptr);
++			m_fY = wcstof(pAttributeValue, &e);
+ 			if (isnan (m_fY))
+ 				throw CNMRException(NMR_ERROR_INVALIDMODELCOORDINATES);
+ 			if (fabs(m_fY) > XML_3MF_MAXIMUMCOORDINATEVALUE)
+@@ -99,7 +100,7 @@
+ 		}
+ 
+ 		if (wcscmp(pAttributeName, XML_3MF_ATTRIBUTE_VERTEX_Z) == 0) {
+-			m_fZ = wcstof(pAttributeValue, nullptr);
++			m_fZ = wcstof(pAttributeValue, &e);
+ 			if (isnan (m_fZ))
+ 				throw CNMRException(NMR_ERROR_INVALIDMODELCOORDINATES);
+ 			if (fabs(m_fZ) > XML_3MF_MAXIMUMCOORDINATEVALUE)
