@@ -4,8 +4,8 @@ PKG             := go
 $(PKG)_WEBSITE  := https://golang.org/
 $(PKG)_OWNER    := https://github.com/starius
 $(PKG)_IGNORE   :=
-$(PKG)_VERSION  := 1.6.2
-$(PKG)_CHECKSUM := 787b0b750d037016a30c6ed05a8a70a91b2e9db4bd9b1a2453aa502a63f1bccc
+$(PKG)_VERSION  := 1.7.4
+$(PKG)_CHECKSUM := 4c189111e9ba651a2bb3ee868aa881fab36b2f2da3409e80885ca758a6b614cc
 $(PKG)_SUBDIR   := go
 $(PKG)_FILE     := go$($(PKG)_VERSION).src.tar.gz
 $(PKG)_URL      := https://storage.googleapis.com/golang/$($(PKG)_FILE)
@@ -13,7 +13,7 @@ $(PKG)_DEPS     :=
 
 define $(PKG)_UPDATE
     $(WGET) -q -O- 'https://golang.org/dl/' | \
-    $(SED) -n 's,.*go\(1.6.[0-9][^>]*\)\.src\.tar.*,\1,p' | \
+    $(SED) -n 's,.*go\(1.[0-9][^>]*\)\.src\.tar.*,\1,p' | \
     $(SORT) -h | tail -1
 endef
 

@@ -54,6 +54,11 @@ PKGS       := $(call set_create,\
 BUILD      := $(shell '$(EXT_DIR)/config.guess')
 PATH       := $(PREFIX)/$(BUILD)/bin:$(PREFIX)/bin:$(PATH)
 
+# set to empty or $(false) to disable stripping
+STRIP_TOOLCHAIN := $(true)
+STRIP_LIB       := $(false)
+STRIP_EXE       := $(true)
+
 # All pkgs have (implied) order-only dependencies on MXE_CONF_PKGS.
 # These aren't meaningful to the pkg list in docs/index.html so
 # use a list in case we want to separate autotools, cmake etc.
@@ -225,29 +230,30 @@ ESCAPE_PKG = \
 
 BACKUP_DOWNLOAD = \
     (echo "MXE Warning! Downloading $(1) from backup." >&2 && \
-    ($(WGET) -O- $(PKG_MIRROR)/`$(call ESCAPE_PKG,$(1))` || \
-    $(WGET) -O- $(PKG_CDN)/`$(call ESCAPE_PKG,$(1))`))
+    ($(WGET) -O '$(PKG_DIR)/.tmp-$($(1)_FILE)' $(PKG_MIRROR)/`$(call ESCAPE_PKG,$(1))` || \
+    $(WGET) -O '$(PKG_DIR)/.tmp-$($(1)_FILE)' $(PKG_CDN)/`$(call ESCAPE_PKG,$(1))`))
 
 DOWNLOAD_PKG_ARCHIVE = \
     $(if $($(1)_SOURCE_TREE),\
         true\
     $(else),\
         mkdir -p '$(PKG_DIR)' && ( \
-            $(WGET) -T 30 -t 3 -O- '$($(1)_URL)' \
+            $(WGET) -T 30 -t 3 -O '$(PKG_DIR)/.tmp-$($(1)_FILE)' '$($(1)_URL)' \
             $(if $($(1)_URL_2), \
                 || (echo "MXE Warning! Downloading $(1) from second URL." >&2 && \
-                    $(WGET) -T 30 -t 3 -O- '$($(1)_URL_2)')) \
+                    $(WGET) -T 30 -t 3 -O '$(PKG_DIR)/.tmp-$($(1)_FILE)' '$($(1)_URL_2)')) \
             $(if $(MXE_NO_BACKUP_DL),, \
                 || $(BACKUP_DOWNLOAD)) \
-        ) \
+        ) && cat '$(PKG_DIR)/.tmp-$($(1)_FILE)' \
         $(if $($(1)_FIX_GZIP), \
             | gzip -d | gzip -9n, \
             ) \
-        > '$(PKG_DIR)/$($(1)_FILE)' || \
+        > '$(PKG_DIR)/$($(1)_FILE)' && \
+        rm '$(PKG_DIR)/.tmp-$($(1)_FILE)' || \
         ( echo; \
           echo 'Download failed!'; \
           echo; \
-          rm -f '$(PKG_DIR)/$($(1)_FILE)'; )\
+          rm -f '$(PKG_DIR)/$($(1)_FILE)' '$(PKG_DIR)/.tmp-$($(1)_FILE)'; )\
     )
 
 # open issue from 2002:
@@ -283,6 +289,10 @@ else
         echo; \
         echo '# This variable controls the targets that will build.'; \
         echo '#MXE_TARGETS := $(MXE_TARGET_LIST)'; \
+        echo; \
+        echo '# This variable controls which plugins are in use.'; \
+        echo '# See plugins/README.md for further information.'; \
+        echo '#override MXE_PLUGIN_DIRS += plugins/apps plugins/native'; \
         echo; \
         echo '# This variable controls the download mirror for SourceForge,'; \
         echo '# when it is used. Enabling the value below means auto.'; \
@@ -545,11 +555,14 @@ $(PREFIX)/$(3)/installed/$(1): $(PKG_MAKEFILES) \
 build-only-$(1)_$(3): PKG = $(1)
 build-only-$(1)_$(3): TARGET = $(3)
 build-only-$(1)_$(3): BUILD_$(if $(findstring shared,$(3)),SHARED,STATIC) = TRUE
+build-only-$(1)_$(3): BUILD_$(if $(call seq,$(TARGET),$(BUILD)),NATIVE,CROSS) = TRUE
 build-only-$(1)_$(3): LIB_SUFFIX = $(if $(findstring shared,$(3)),dll,a)
 build-only-$(1)_$(3): BITS = $(if $(findstring x86_64,$(3)),64,32)
 build-only-$(1)_$(3): BUILD_TYPE = $(if $(findstring debug,$(3) $($(1)_CONFIGURE_OPTS)),debug,release)
 build-only-$(1)_$(3): BUILD_TYPE_SUFFIX = $(if $(findstring debug,$(3) $($(1)_CONFIGURE_OPTS)),d)
-build-only-$(1)_$(3): SOURCE_DIR = $(or $($(1)_SOURCE_TREE),$(2)/$($(1)_SUBDIR))
+build-only-$(1)_$(3): INSTALL_STRIP_TOOLCHAIN = install$(if $(STRIP_TOOLCHAIN),-strip)
+build-only-$(1)_$(3): INSTALL_STRIP_LIB = install$(if $(STRIP_LIB),-strip)
+build-only-$(1)_$(3): SOURCE_DIR = $(or $(realpath $($(1)_SOURCE_TREE)),$(2)/$($(1)_SUBDIR))
 build-only-$(1)_$(3): BUILD_DIR  = $(2)/$(if $($(1)_SOURCE_TREE),local,$($(1)_SUBDIR)).build_
 build-only-$(1)_$(3): TEST_FILE  = $($(1)_TEST_FILE)
 build-only-$(1)_$(3): CMAKE_RUNRESULT_FILE = $(PREFIX)/share/cmake/modules/TryRunResults.cmake
@@ -586,6 +599,7 @@ build-only-$(1)_$(3):
 	    @echo
 	    @echo 'settings.mk'
 	    @cat '$(TOP_DIR)/settings.mk'
+	    $(if $(STRIP_EXE),-$(TARGET)-strip '$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe')
 	    (du -k -d 0 '$(2)' 2>/dev/null || du -k --max-depth 0 '$(2)') | $(SED) -n 's/^\(\S*\).*/du: \1 KiB/p'
 	    rm -rfv  '$(2)'
 	    )
@@ -746,13 +760,13 @@ cleanup-style:
 
 .PHONY: cleanup-deps-style
 cleanup-deps-style:
-	@grep '(PKG)_DEPS.*\\' '$(TOP_DIR)'/src/*.mk > $(TOP_DIR)/tmp-$@-pre
+	@grep '(PKG)_DEPS.*\\' $(foreach 1,$(PKGS),$(PKG_MAKEFILES)) > $(TOP_DIR)/tmp-$@-pre
 	@$(foreach PKG,$(PKGS), \
 	    $(if $(call lne,$(sort $(filter-out gcc,$($(PKG)_DEPS))),$(filter-out gcc,$($(PKG)_DEPS))), \
 	        $(info [cleanup] $(PKG)) \
-	        $(SED) -i 's/^\([^ ]*_DEPS *:=\).*/\1 '"$(strip $(filter gcc,$($(PKG)_DEPS)) $(sort $(filter-out gcc,$($(PKG)_DEPS))))"'/' '$(TOP_DIR)/src/$(PKG).mk'; \
+	        $(SED) -i 's/^\([^ ]*_DEPS *:=\)[^$$]*$$/\1 '"$(strip $(filter gcc,$($(PKG)_DEPS)) $(sort $(filter-out gcc,$($(PKG)_DEPS))))"'/' '$(call PKG_MAKEFILES,$(PKG))'; \
 	    ))
-	@grep '(PKG)_DEPS.*\\' '$(TOP_DIR)'/src/*.mk > $(TOP_DIR)/tmp-$@-post
+	@grep '(PKG)_DEPS.*\\' $(foreach 1,$(PKGS),$(PKG_MAKEFILES)) > $(TOP_DIR)/tmp-$@-post
 	@diff -u $(TOP_DIR)/tmp-$@-pre $(TOP_DIR)/tmp-$@-post >/dev/null \
 	     || echo '*** Multi-line deps are mangled ***' && comm -3 tmp-$@-pre tmp-$@-post
 	@rm -f $(TOP_DIR)/tmp-$@-*
@@ -851,7 +865,7 @@ docs/build-matrix.html: $(foreach 1,$(PKGS),$(PKG_MAKEFILES))
 	@echo '</html>'                         >> $@
 
 .PHONY: docs/versions.json
-docs/versions.json: $(foreach PKG,$(PKGS), $(TOP_DIR)/src/$(PKG).mk)
+docs/versions.json: $(foreach 1,$(PKGS),$(PKG_MAKEFILES))
 	@echo '{'                         > $@
 	@{$(foreach PKG,$(PKGS),          \
 	    echo '    "$(PKG)":           \
